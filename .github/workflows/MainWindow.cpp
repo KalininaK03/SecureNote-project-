@@ -1,59 +1,45 @@
-//MaimWindow.cpp
-#include "MainWindow.h"
-#include "ui_MainWindow.h"
-#include <pthread.h>
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QFile>
 
-using namespace std;
-
-MainWindow::MainWindow(const QString &password, QWidget *parent)
-          : QMainWindow(parent), ui(new Ui::MainWindow), userPassword(password) {
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
-    connect(ui->saveButton, &PushButton::clicked, this, &MainWindow::saveNote);
-    connect(ui->loadButton, &PushButton::clicked, this, &MainWindow::loadNotes);
-    connect(ui->notesList, &ListWidget::itemClicked, this, &MainWindow::selectNote);
-
-    loadNotes();
+    // Подключение сигналов к слотам
+    connect(ui->actionNewNote, &QAction::triggered, this, &MainWindow::on_actionNewNote_triggered);
+    connect(ui->actionSaveNote, &QAction::triggered, this, &MainWindow::on_actionSaveNote_triggered);
+    connect(ui->actionDeleteNote, &QAction::triggered, this, &MainWindow::on_actionDeleteNote_triggered);
+    connect(ui->actionToggleTheme, &QAction::triggered, this, &MainWindow::on_actionToggleTheme_triggered);
 }
 
 MainWindow::~MainWindow() {
     delete ui;
 }
 
-void MainWindow::saveNote() {
-    String title = ui->titleEdit->text();
-    String content = ui->textEdit->toPlainText();
-
-    if (title.isEmpty() || content.isEmpty()) {
-        ui->statusBar->showMessage("Ошибка: Заголовок и содержание не могут быть пустыми!", 3000);
-        return;
-    }
-
-    string encryptedContent = Crypto::encrypt(content.toStdString(), userPassword.toStdString());
-    Database::saveNote(Note(title.toStdString(), encryptedContent));
-
-    ui->statusBar->showMessage("Заметка сохранена!", 2000);
-    loadNotes();
+void MainWindow::on_actionNewNote_triggered() {
+    noteManager.createNewNote();
+    QMessageBox::information(this, "Info", "New note created!");
 }
 
-void MainWindow::loadNotes() {
-    notes = Database::loadNotes();
-    ui->notesList->clear();
-
-    for (const auto &note : notes) {
-        ui->notesList->addItem(QString::fromStdString(note.getTitle()));
-    }
+void MainWindow::on_actionSaveNote_triggered() {
+    QString content = ui->textEdit->toPlainText();
+    noteManager.saveNote(content);
+    QMessageBox::information(this, "Info", "Note saved successfully!");
 }
 
-void MainWindow::selectNote(QListWidgetItem *item) {
-    for (const auto &note : notes) {
-        if (QString::fromStdString(note.getTitle()) == item->text()) {
-            QString decryptedContent = QString::fromStdString(
-                Crypto::decrypt(note.getContent(), userPassword.toStdString())
-            );
-            ui->titleEdit->setText(item->text());
-            ui->textEdit->setText(decryptedContent);
-            break;
-        }
+void MainWindow::on_actionDeleteNote_triggered() {
+    noteManager.deleteNote();
+    QMessageBox::warning(this, "Warning", "Note deleted!");
+}
+
+void MainWindow::on_actionToggleTheme_triggered() {
+    isDarkTheme = !isDarkTheme;
+    QFile styleFile(isDarkTheme ? ":/styles/dark_theme.qss" : ":/styles/light_theme.qss");
+    if (styleFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(styleFile.readAll());
+        qApp->setStyleSheet(styleSheet);
     }
 }

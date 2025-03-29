@@ -1,34 +1,30 @@
-//MainWindow.h
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <ListWidgetItem>
-#include <string>
-#include "Note.h"
-#include "Database.h"
-#include "Crypto.h"
+#include <QMainWindow>
+#include "notemanager.h" // Модуль для управления заметками
 
-using namespace std;
-
-QT_BEGIN_NAMESPACE;
+QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
+
 public:
-    explicit MainWindow(const QString &password, QWidget *parent = nullptr);
+    MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 private slots:
-    void saveNote();
-    void loadNotes();
-    void selectNote(QListWidgetItem *item);
+    void on_actionNewNote_triggered(); // Создание новой заметки
+    void on_actionSaveNote_triggered(); // Сохранение заметки
+    void on_actionDeleteNote_triggered(); // Удаление заметки
+    void on_actionToggleTheme_triggered(); // Переключение темы
 
 private:
     Ui::MainWindow *ui;
-    std::vector<Note> notes;
-    QString userPassword;  // Пароль для шифрования
+    NoteManager noteManager; // Менеджер заметок
+    bool isDarkTheme = true; // Текущая тема
 };
 
 #endif // MAINWINDOW_H
